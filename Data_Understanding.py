@@ -92,7 +92,7 @@ with st.expander("16-Feature Dataset"):
 # --------------------------------------------------------
 # 28-features
 
-train_ft_28, test_ft_28 = train_test_split(ft_dataset_28, test_size=0.2, random_state=42, stratify=ft_dataset_28['Class'])
+train_ft_28, test_ft_28 = train_test_split(ft_dataset_28, test_size=0.2, random_state=2026, stratify=ft_dataset_28['Class'])
 
 with st.expander("28-Feature Dataset"):
     st.header("Dataset Overview")

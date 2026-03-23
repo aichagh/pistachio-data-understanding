@@ -70,30 +70,6 @@ with st.expander("Image Dataset"):
 # ------------------ Feature datasets -------------------
 # 16-features
 
-def plot_feature_grid(df, title, n_cols=4):
-    feature_columns = df.columns[:-1]
-    n_features = len(feature_columns)
-    n_rows = (n_features + n_cols - 1) // n_cols
-
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 4 * n_rows))
-    axes = axes.flatten()
-
-    for idx, feature in enumerate(feature_columns):
-        ax = axes[idx]
-        ax.hist(df[feature], bins=20, alpha=0.7)
-        ax.set_title(feature)
-        ax.set_xlabel(feature)
-        ax.set_ylabel('Frequency')
-
-    for idx in range(n_features, len(axes)):
-        axes[idx].axis('off')
-
-    fig.tight_layout(pad=2.0)
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-
-    st.write(f"### {title}")
-    st.pyplot(fig)
-
 train_ft_16, test_ft_16 = train_test_split(ft_dataset_16, test_size=0.2, random_state=2026, stratify=ft_dataset_16['Class'])
 
 with st.sidebar:  
@@ -112,23 +88,6 @@ with st.expander("16-Feature Dataset"):
     st.dataframe(train_ft_16.head())
     st.header("Class distribution in the 16-feature dataset:")
     st.bar_chart(train_ft_16['Class'].value_counts())
-    st.header("Feature distributions in the 16-feature dataset:")
-    plot_feature_grid(train_ft_16, "16-feature distributions")
-    st.header("Correlation heatmap for the 16-feature dataset:")
-    plt.figure(figsize=(12, 10))
-    correlation_matrix = train_ft_16.drop(columns=['Class']).corr()
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title("Correlation Heatmap - 16-feature dataset")
-    st.pyplot(plt)
-    st.header("Most highly correlated feature pairs in the 16-feature dataset (>= 0.8 absolute correlation):")
-    highly_correlated_pairs = []
-    for i in range(len(correlation_matrix.columns)):
-        for j in range(i+1, len(correlation_matrix.columns)):
-            if abs(correlation_matrix.iloc[i, j]) > 0.8:
-                highly_correlated_pairs.append((correlation_matrix.columns[i], correlation_matrix.columns[j]))
-
-    for pair in highly_correlated_pairs:
-        st.write(f"- {pair[0]} and {pair[1]} ({correlation_matrix.loc[pair[0], pair[1]]:.2f})")
 
 # --------------------------------------------------------
 # 28-features
@@ -136,11 +95,9 @@ with st.expander("16-Feature Dataset"):
 train_ft_28, test_ft_28 = train_test_split(ft_dataset_28, test_size=0.2, random_state=42, stratify=ft_dataset_28['Class'])
 
 with st.expander("28-Feature Dataset"):
-    st.write("### Dataset Overview")
+    st.header("Dataset Overview")
     st.write(f"28-feature dataset - Training set size: {len(train_ft_28)}, Test set size: {len(test_ft_28)}")
-    st.write("### First 5 rows of the 28-feature dataset:")
+    st.header("First 5 rows of the 28-feature dataset:")
     st.dataframe(train_ft_28.head())
-    st.write("### Class distribution in the 28-feature dataset:")
+    st.header("Class distribution in the 28-feature dataset:")
     st.bar_chart(train_ft_28['Class'].value_counts())
-    st.write("### Feature distributions in the 28-feature dataset:")
-    plot_feature_grid(train_ft_28, "28-feature distributions")

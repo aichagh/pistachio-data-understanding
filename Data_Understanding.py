@@ -7,6 +7,8 @@ import torch
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import train_test_split
 import seaborn as sns
+import plotly.express as px
+
 
 st.set_page_config(
     layout="wide",
@@ -24,6 +26,10 @@ transform = transforms.Compose([
     transforms.ToTensor(),
 ])
 img_dataset = datasets.ImageFolder('./Pistachio_Image_Dataset/Pistachio_Image_Dataset/Pistachio_Image_Dataset', transform=transform)
+
+st.title("Pistachio Dataset - Data Understanding")
+
+tab1, tab2, tab3 = st.tabs(["Image Dataset", "16-Feature Dataset", "28-Feature Dataset"])
 
 # ------------------ Image dataset -------------------
 
@@ -45,25 +51,19 @@ batch_size = 32
 train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True, num_workers=0)
 test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=False, num_workers=0)
 
-st.title("Pistachio Dataset - Data Understanding")
+with tab1:
 
-with st.expander("Image Dataset"):
-
-    st.write("### Dataset Overview")
+    st.header("Dataset Overview")
     st.write(f"Training set size: {len(train_subset)}, Test set size: {len(test_subset)}")
+    st.write(f"Image shape: {img_dataset[0][0].shape}")
     st.write(f"Class names: {img_dataset.classes}")
 
-    # show first batch from train_loader
+    col1, col2, col3, col4, col5 = st.columns(5)
     try:
         batch_images, batch_labels = next(iter(train_loader))
-        st.write(f"Batch size: {batch_images.shape[0]}")
-        fig, ax = plt.subplots(1, 5, figsize=(20, 20))
-        for i in range(5):
+        for col, i in zip([col1, col2, col3, col4, col5], range(5)):
             img = batch_images[i].permute(1, 2, 0).numpy()
-            ax[i].imshow(img)
-            ax[i].set_title(f"Class: {img_dataset.classes[batch_labels[i]]}")
-            ax[i].axis('off')
-        st.pyplot(fig)
+            col.image(img, caption=f"Class: {img_dataset.classes[batch_labels[i]]}", width=150)
     except Exception as e:
         st.warning(f"Could not render sample images from DataLoader: {e}")
 
@@ -72,32 +72,57 @@ with st.expander("Image Dataset"):
 
 train_ft_16, test_ft_16 = train_test_split(ft_dataset_16, test_size=0.2, random_state=2026, stratify=ft_dataset_16['Class'])
 
-with st.sidebar:  
-    # add header  
-    st.header("Filters", divider=True)
-    # dropdown to select attributes
-    selected_attribute = st.selectbox("Attribute: ", train_ft_16.columns[:-1], index=0)
-    # multiselect to select species
-    selected_class = st.multiselect("Class: ", train_ft_16['Class'].unique())
-
-
-with st.expander("16-Feature Dataset"):
-    st.header("Dataset Overview")
-    st.dataframe(train_ft_16.describe(), width='stretch')
-    st.header("First 5 rows of the 16-feature dataset:")
-    st.dataframe(train_ft_16.head())
-    st.header("Class distribution in the 16-feature dataset:")
-    st.bar_chart(train_ft_16['Class'].value_counts())
+with tab2:
+    with st.expander("Dataset Overview", expanded=True):
+        selected_classes = st.multiselect("Classes: ", train_ft_16['Class'].unique(), placeholder="Filter by class", default=train_ft_16['Class'].unique())
+        filtered_df = train_ft_16[train_ft_16['Class'].isin(selected_classes)]
+        st.header("Description of the dataset")
+        st.dataframe(filtered_df.describe(), width='stretch')
+        st.header("First 5 rows of the 16-feature dataset:")
+        st.dataframe(filtered_df.head())
+        st.header("Class distribution in the 16-feature dataset:")
+        st.bar_chart(train_ft_16['Class'].value_counts())
+        
+    with st.expander("Visualization", expanded=False):
+        selected_attribute = st.selectbox("Select an attribute to visualize: ", train_ft_16.columns[:-1], index=0)
+        st.header(f"Distribution of {selected_attribute} by class")
+        st.plotly_chart(px.histogram(filtered_df, x=selected_attribute, color='Class', title=f"{selected_attribute} distribution by class", marginal="box"), use_container_width=True)
+        
+        st.space()
+        selected_attribute_a = st.selectbox("Select attribute A for scatter plot: ", train_ft_16.columns[:-1], index=0, key='scatter_a')
+        selected_attribute_b = st.selectbox("Select attribute B for scatter plot: ", train_ft_16.columns[:-1], index=1, key='scatter_b')
+        st.header(f"Scatter plot of {selected_attribute_a} vs. {selected_attribute_b}")
+        fig = px.scatter(filtered_df, x=selected_attribute_a, y=selected_attribute_b, color='Class', title=f"{selected_attribute_a} vs. {selected_attribute_b}")
+        st.plotly_chart(fig, use_container_width=True)
+        
+        
+        
 
 # --------------------------------------------------------
 # 28-features
 
 train_ft_28, test_ft_28 = train_test_split(ft_dataset_28, test_size=0.2, random_state=2026, stratify=ft_dataset_28['Class'])
 
-with st.expander("28-Feature Dataset"):
-    st.header("Dataset Overview")
-    st.write(f"28-feature dataset - Training set size: {len(train_ft_28)}, Test set size: {len(test_ft_28)}")
-    st.header("First 5 rows of the 28-feature dataset:")
-    st.dataframe(train_ft_28.head())
-    st.header("Class distribution in the 28-feature dataset:")
-    st.bar_chart(train_ft_28['Class'].value_counts())
+with tab3:
+    with st.expander("Dataset Overview"):
+        selected_classes_28 = st.multiselect("Classes: ", train_ft_28['Class'].unique(), placeholder="Filter by class", default=train_ft_28['Class'].unique())
+        filtered_df_2 = train_ft_28[train_ft_28['Class'].isin(selected_classes_28)]
+        st.header("Description of the dataset")
+        st.write(f"28-feature dataset - Training set size: {len(train_ft_28)}, Test set size: {len(test_ft_28)}")
+        st.header("First 5 rows of the 28-feature dataset:")
+        st.dataframe(train_ft_28.head())
+        st.header("Class distribution in the 28-feature dataset:")
+        st.bar_chart(train_ft_28['Class'].value_counts())
+    
+    
+    with st.expander("Visualization", expanded=False):
+        selected_attribute_2 = st.selectbox("Select an attribute to visualize: ", train_ft_28.columns[:-1], index=0)
+        st.header(f"Distribution of {selected_attribute_2} by class")
+        st.plotly_chart(px.histogram(filtered_df_2, x=selected_attribute_2, color='Class', title=f"{selected_attribute_2} distribution by class", marginal="box"), use_container_width=True)
+        
+        st.space()
+        selected_attribute_a_2 = st.selectbox("Select attribute A for scatter plot: ", train_ft_28.columns[:-1], index=0, key='scatter_a_28')
+        selected_attribute_b_2 = st.selectbox("Select attribute B for scatter plot: ", train_ft_28.columns[:-1], index=1, key='scatter_b_28')
+        st.header(f"Scatter plot of {selected_attribute_a_2} vs. {selected_attribute_b_2}")
+        fig = px.scatter(filtered_df_2, x=selected_attribute_a_2, y=selected_attribute_b_2, color='Class', title=f"{selected_attribute_a_2} vs. {selected_attribute_b_2}")
+        st.plotly_chart(fig, use_container_width=True)
